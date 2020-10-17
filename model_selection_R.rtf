@@ -1,0 +1,140 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf600
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs22 \cf0 library(car)\
+library(MPV)\
+\pard\pardeftab720\partightenfactor0
+\cf0 \
+#loading the data\
+data = read.table("nsghomes.txt",header=TRUE)\
+attach(data)\
+\
+#Noting that rurality in the data set is a categorical variable\
+newrural=factor(rural)\
+\
+#Running some basic summary statistics\
+summary(bed)\
+summary(mcdays)\
+summary(tdays)\
+summary(nsal)\
+summary(rural)\
+summary(fexp)\
+summary(pcrev)\
+\
+#Producing pairwise scatter plots and correlation tables of data variables\
+pairs(data)\
+cor(data)\
+\
+#fitting a linear regression model\
+fit=lm(fexp~bed+mcdays+tdays+pcrev+nsal+newrural)\
+summary(fit)\
+\
+#checking linearity, residual vs. fit plots, component v. residual plots\
+plot(fit,which=1)\
+plot(bed,residuals(fit))\
+plot(mcdays,residuals(fit))\
+plot(tdays,residuals(fit))\
+plot(pcrev,residuals(fit))\
+plot(nsal,residuals(fit))\
+plot(rural,residuals(fit))\
+crPlots(fit)\
+\
+#checking normality, homoscedasticity\
+plot(fit,which=2)\
+shapiro.test(residuals(fit))\
+plot(fit,which=3)\
+ncvTest(fit)\
+\
+#looking for evidence of multicollinearity\
+vif(fit)\
+\
+#checking for high leverage points, outliers\
+plot(fit,which=5,cook.levels=4/(n-p))\
+n=dim(data)[1]\
+p=fit$rank\
+abline(h=c(-3,3),col="blue")\
+abline(v=2*p/n,col="green")\
+\
+#identifying individual problem points on the graph\
+identify(hatvalues(fit),rstandard(fit))\
+data[31,]\
+data[30,]\
+data[32,]\
+\
+#checking how individual points affect overall fit\
+\
+#starting with removing observation 31 and refitting\
+	data_2=data[-c(31),]\
+	fit1=lm(fexp~.,data=data_2)\
+	summary(fit2)\
+	n1=dim(data_2)[1]\
+	p1=fit2$rank\
+	plot(fit1,which=5,cook.levels=4/(n1-p))\
+	abline(v=2*p/n1,col="green")\
+	abline(h=c(-3,3),col="blue")\
+	identify(hatvalues(fit1),rstandard(fit1))\
+	data_2[37,]\
+\
+#removing observations 31 and 26, refitting\
+	data_3=data[-c(31,26),]\
+	data[26,]\
+	fit3=lm(fexp~.,data=data_3)\
+	summary(fit3)\
+\
+#removing observations 31 and 1, refitting\
+	data_4=data[-c(31,1),]\
+	data[1,]\
+	fit4=lm(fexp~.,data=data_4)\
+	summary(fit4)\
+	summary(fit)\
+\
+#removing observations 31, 26, and 1, refitting\
+	data_5=data[-c(31,26,1),]\
+	fit5=lm(fexp~.,data=data_5)\
+	summary(fit5)\
+\
+#model selection, omitting only observation 31 for the final data set\
+finaldata=data[-31,]\
+attach(finaldata)\
+factor(rural)\
+\
+#fitting a full model\
+full=lm(fexp~.,data=finaldata)\
+null=lm(fexp~1,data=finaldata)\
+\
+#AIC backward selection\
+AICb=step(full,direction = "backward")\
+\
+#AIC forward selection\
+AICf=step(null, direction="forward", scope=list(lower=null,upper=full))\
+n1=dim(finaldata)[1]\
+\
+#BIC backward selection\
+BICb=step(full,direction = "backward", k=log(n1))\
+\
+#BIC forward selection\
+BICf=step(null, direction="forward", scope=list(lower=null,upper=full),k=log(n1))\
+\
+#looking at the fits for each model, their summaries, and their PRESS values against previously fitted\
+fitaicb=lm(fexp~nsal+bed+mcdays+pcrev+tdays,data=finaldata)\
+fitaicf=lm(fexp~bed+mcdays+nsal+rural,data=finaldata)\
+fitbicb=lm(fexp~tdays+pcrev,data=finaldata)\
+fitbicf=lm(fexp~bed+mcdays+nsal+rural,data=finaldata)\
+\
+summary(fitaicb)\
+summary(fitaicf)\
+summary(fitbicb)\
+summary(fitbicf)\
+\
+PRESS(fitaicb)\
+PRESS(fitaicf)\
+PRESS(fitbicb)\
+PRESS(fitbicf)\
+PRESS(full)\
+\
+}
